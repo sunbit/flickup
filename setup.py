@@ -20,7 +20,12 @@ setup(name='flickup',
       install_requires=[
           # -*- Extra requirements: -*-
           "python-flickr",
-          "rauth"
+          "rauth",
+          "docopt",
+          "pysqlite",
+          "sh",
+          "exifread",
+          "pyyaml"
       ],
       extras_require={
           'tests': []
