@@ -4,8 +4,8 @@ import unicodedata
 
 
 class PhotoDatabase(object):
-    def __init__(self, settings):
-        self.conn = sqlite3.connect(settings['db'])
+    def __init__(self, database):
+        self.conn = sqlite3.connect(database)
         cursor = self.conn.cursor()
         current_tables = [a for a in cursor.execute("SELECT * FROM sqlite_master WHERE type='table';")]
         table_ids = [a[1] for table in current_tables]

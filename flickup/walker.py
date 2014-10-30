@@ -12,14 +12,18 @@ from flickup import DO_CONVERT
 class Walker(object):
     valid_formats = ['jpg']
 
-    def __init__(self, path, settings):
-        self.path = os.path.realpath(path)
-
+    def __init__(self, settings):
+        self.settings = settings
         homedir = os.path.expanduser("~")
         self.config_dir = '{}/.flickup'.format(homedir)
 
-        self.database = PhotoDatabase(settings)
-        self.uploader = Uploader(database=self.database)
+        self.database = PhotoDatabase(
+            self.settings['db']
+        )
+        self.uploader = Uploader(
+            self.database,
+            settings['root']
+        )
 
         self.baked_convert = convert.bake('-interlace', 'Plane', '-quality', '85%')
 
@@ -32,8 +36,8 @@ class Walker(object):
             print 'Converted ', filename
         self.database.save_processed(filename)
 
-    def run(self):
-        self.recurse_dir(self.path)
+    def run(self, path):
+        self.recurse_dir(os.path.realpath(path))
 
     def is_temp_file(self, filename):
         valid_formats_regex = '|'.join(self.valid_formats)
@@ -94,7 +98,7 @@ class Walker(object):
             reset uploaded --> unsets the uploaded marker and related flickr data, to force reupload of the photos in this folder/s
             reset album --> unsets the link to a flickr photoset
 
-            Bot options delete the photoset on flickr
+            Both options delete the photoset on flickr
 
             Afther this tries to detect if a folder has been renamed on disk and updates database and flickr
 

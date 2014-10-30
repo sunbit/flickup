@@ -10,6 +10,8 @@ import urllib
 
 from flickr import FlickrAPI
 from rauth import OAuth1Session
+from flickup import DO_UPLOAD
+from flickup import LOG_EXISTING
 
 
 def dict_to_qs(d):
@@ -32,7 +34,7 @@ class Uploader(object):
     session_access_token = '72157637665662093-bebe07e6387e9e87'
     session_access_token_secret = '6aff330f2cb038fc'
 
-    def __init__(self, database):
+    def __init__(self, database, root):
         self.session = OAuth1Session(
             self.consumer_key,
             self.consumer_secret,
@@ -47,11 +49,11 @@ class Uploader(object):
             oauth_token_secret=self.session_access_token_secret
         )
         self.database = database
-        self.collections = {}
+        self.root = os.path.realpath(root)
         self.get_collections_tree()
 
     def extract_parts(self, filename):
-        parts = filename.split('Pictures/')[1].split('/')
+        parts = filename.split(self.root)[1].lstrip('/').split('/')
         image_title = parts[-1]
         photoset_title = parts[-2]
         collection_tree = parts[:-2]
@@ -73,6 +75,7 @@ class Uploader(object):
         return json.loads(re.sub(r'jsonFlickrApi\((.*)\)', r'\1', resp.content))
 
     def get_collections_tree(self):
+        self.collections = {}
         resp = self.session_get("flickr.collections.getTree")
         root = resp['collections']
         self.recurse_collections(root, self.collections)
@@ -90,9 +93,9 @@ class Uploader(object):
             base_col[album_title]['type'] = 'set'
 
     def create_collection(self, name, node, description=''):
-        print 'Creating collection {} in {}'.format(name, node['title'])
+        print 'Creating collection {} in {}'.format(name, node.get('title', 'Flickr collections root'))
         options = {'title': name}
-        if node is not None:
+        if 'id' in node:
             options['parent_id'] = node['id']
 
         resp = self.session_post('flickr.collections.create', params=options)
@@ -261,7 +264,7 @@ class Uploader(object):
             photoset['photos'] = dict([(a['title'], a['id']) for a in resp['photoset']['photo']])
 
     def upload(self, filename):
-        if 'Pictures' in filename:
+        if filename.startswith(self.root):
             collection_tree, photoset_title, image_title = self.extract_parts(filename)
             photoset_node = self.get_photoset(collection_tree, photoset_title)
 
